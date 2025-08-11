@@ -17,6 +17,8 @@ session_name = 'terminal_session'
 downloads = os.path.join(os.getcwd(), "downloads")
 os.makedirs(downloads, exist_ok=True)
 
+auto_download_image = os.getenv("AUTO_DOWNLOAD_IMAGE", "true").lower() == "true"
+
 def get_display_name(sender):
     first = getattr(sender, 'first_name', None)
     last = getattr(sender, 'last_name', None)
@@ -70,7 +72,7 @@ async def print_chatroom_messages(client, entity, limit):
             print(f"[{msg.id}] {sender_str}: {reply_info}[image] {msg.text}")
             ext = get_photo_ext(msg.photo)
             image_path = f"{downloads}/{msg.photo.id}{ext}"
-            if not os.path.exists(image_path):
+            if auto_download_image and not os.path.exists(image_path):
                 file_path = await client.download_media(msg.photo, file=image_path)
                 print(f"Downloaded image to: {file_path}")
         elif msg.media:
@@ -190,7 +192,7 @@ async def main():
                     print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[image] {event.text}")
                     ext = get_photo_ext(event.photo)
                     image_path = f"{downloads}/{event.photo.id}{ext}"
-                    if not os.path.exists(image_path):
+                    if auto_download_image and not os.path.exists(image_path):
                         file_path = await client.download_media(event.photo, file=image_path)
                         print(f"Downloaded image to: {file_path}")
                 elif event.media:
@@ -221,9 +223,14 @@ async def main():
                             reply_id = int(parts[1])
                             reply_message = parts[2]
                             try:
-                                await client.send_message(selected.entity, reply_message, reply_to=reply_id)
+                                sent = await client.send_message(selected.entity, reply_message, reply_to=reply_id)
+                                # Show reply message you just sent
+                                me = await client.get_me()
+                                display_name = get_display_name(me)
+                                sender_str = f"{me.username} ({display_name})" if me.username else display_name or "Unknown"
+                                print(f"[{sent.id}] {sender_str}: (reply > {reply_id}) {reply_message}")
                             except Exception as e:
-                                print("Reply failed:", e)
+                                print(f"Reply failed: {e}")
                             continue
 
                         if msg.startswith('@'):
