@@ -39,7 +39,6 @@ def get_photo_ext(photo):
     return '.jpg'
 
 async def print_chatroom_messages(client, entity, limit):
-
     messages = await client.get_messages(entity, limit=limit)
     for msg in reversed(messages):
         sender = await msg.get_sender()
@@ -49,19 +48,35 @@ async def print_chatroom_messages(client, entity, limit):
             sender_str = f"{display_name} ({username})" if display_name else username
         else:
             sender_str = display_name or "Unknown"
+
+        # Handling of reply
+        reply_info = ""
+        if msg.reply_to_msg_id:
+            try:
+                reply_msg = await client.get_messages(entity, ids=msg.reply_to_msg_id)
+                reply_sender = await reply_msg.get_sender()
+                reply_username = getattr(reply_sender, 'username', None)
+                reply_display_name = get_display_name(reply_sender)
+                if reply_username:
+                    reply_info = f"(reply > {reply_display_name}) "
+                else:
+                    reply_info = f"(reply > {reply_display_name or 'Unknown'}) "
+            except Exception:
+                reply_info = f"(reply > [{msg.reply_to_msg_id}]) "
+
         if msg.sticker:
-            print(f"{sender_str}: [sticker]")
+            print(f"[{msg.id}] {sender_str}: {reply_info}[sticker]")
         elif msg.photo:
-            print(f"{sender_str}: [image] {msg.text}")
+            print(f"[{msg.id}] {sender_str}: {reply_info}[image] {msg.text}")
             ext = get_photo_ext(msg.photo)
             image_path = f"{downloads}/{msg.photo.id}{ext}"
             if not os.path.exists(image_path):
                 file_path = await client.download_media(msg.photo, file=image_path)
                 print(f"Downloaded image to: {file_path}")
         elif msg.media:
-            print(f"{sender_str}: [media] {msg.text}")
+            print(f"[{msg.id}] {sender_str}: {reply_info}[media] {msg.text}")
         else:
-            print(f"{sender_str}: {msg.text}")
+            print(f"[{msg.id}] {sender_str}: {reply_info}{msg.text}")
 
 class UsernameCompleter(Completer):
     def __init__(self, usernames):
@@ -74,6 +89,26 @@ class UsernameCompleter(Completer):
             for username in self.usernames:
                 if username and username.startswith(prefix):
                     yield Completion(username, start_position=-len(prefix))
+
+class ChatCompleter(Completer):
+    def __init__(self, usernames, message_ids):
+        self.usernames = usernames
+        self.message_ids = message_ids
+
+    def get_completions(self, document, complete_event):
+        text = document.text_before_cursor
+        # @username Completion
+        if text.startswith('@'):
+            prefix = text[1:]
+            for username in self.usernames:
+                if username and username.startswith(prefix):
+                    yield Completion(username, start_position=-len(prefix))
+        # /r [msg_id] Completion
+        elif text.startswith('/r '):
+            prefix = text[3:]
+            for mid in self.message_ids:
+                if str(mid).startswith(prefix):
+                    yield Completion(str(mid), start_position=-len(prefix))
 
 async def get_usernames(client, entity):
     usernames = set()
@@ -110,9 +145,14 @@ async def main():
                 except ValueError:
                     print("Please enter a valid number.")
 
-            # Get all usernames in the chat room
+            # Retrieve all usernames from the chatroom
             usernames = await get_usernames(client, selected.entity)
-            session = PromptSession(completer=UsernameCompleter(usernames))
+
+            # Retrieve all message IDs from the chatroom
+            messages = await client.get_messages(selected.entity, limit=50)
+            message_ids = [msg.id for msg in messages]
+
+            session = PromptSession(completer=ChatCompleter(usernames, message_ids))
 
             # Remove the old handler before entering the chat room.
             if handler_ref:
@@ -129,23 +169,38 @@ async def main():
                     sender_str = display_name or "Unknown"
                 from prompt_toolkit.shortcuts import print_formatted_text
 
+                # Handling of reply
+                reply_info = ""
+                if event.reply_to_msg_id:
+                    try:
+                        reply_msg = await client.get_messages(selected.entity, ids=event.reply_to_msg_id)
+                        reply_sender = await reply_msg.get_sender()
+                        reply_username = getattr(reply_sender, 'username', None)
+                        reply_display_name = get_display_name(reply_sender)
+                        if reply_username:
+                            reply_info = f"(reply > {reply_display_name}) "
+                        else:
+                            reply_info = f"(reply > {reply_display_name or 'Unknown'}) "
+                    except Exception:
+                        reply_info = f"(reply > [{event.reply_to_msg_id}]) "
+
                 if event.sticker:
-                    print_formatted_text(f"{sender_str}: [sticker]")
+                    print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[sticker]")
                 elif event.photo:
-                    print_formatted_text(f"{sender_str}: [image] {event.text}")
+                    print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[image] {event.text}")
                     ext = get_photo_ext(event.photo)
                     image_path = f"{downloads}/{event.photo.id}{ext}"
                     if not os.path.exists(image_path):
                         file_path = await client.download_media(event.photo, file=image_path)
                         print(f"Downloaded image to: {file_path}")
                 elif event.media:
-                    print_formatted_text(f"{sender_str}: [media] {event.text}")
+                    print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[media] {event.text}")
                 else:
-                    print_formatted_text(f"{sender_str}: {event.text}")
+                    print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}{event.text}")
 
             handler_ref = handler
 
-            await print_chatroom_messages(client, selected.entity, limit=50)
+            await print_chatroom_messages(client, selected.entity, limit=100)
 
             print(f"\nJoined chat: {selected.name or '(no title)'}")
             print("Type ':wq' to quit.")
@@ -153,11 +208,24 @@ async def main():
             try:
                 with patch_stdout():
                     while True:
-                        msg = await session.prompt_async("Send message (or @someone): ")
+                        msg = await session.prompt_async("Send message (or @someone, or /r [msg_id] [message]): ")
                         if msg.strip() == ':wq':
                             print("\nReturning to chat list...")
                             break
                         
+                        if msg.startswith('/r '):
+                            parts = msg.split(' ', 2)
+                            if len(parts) < 3:
+                                print("Usage: /r [msg_id] [message]")
+                                continue
+                            reply_id = int(parts[1])
+                            reply_message = parts[2]
+                            try:
+                                await client.send_message(selected.entity, reply_message, reply_to=reply_id)
+                            except Exception as e:
+                                print("Reply failed:", e)
+                            continue
+
                         if msg.startswith('@'):
                             parts = msg.split(' ', 1)
                             if len(parts) < 2:
