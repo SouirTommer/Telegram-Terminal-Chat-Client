@@ -16,6 +16,9 @@ Supports message sending, @mention with tab completion, reply by message ID, aut
 ## Dependencies
 
 - Python 3.7 or higher
+- telethon
+- python-dotenv
+- prompt_toolkit
 
 ## Installation
 
@@ -33,10 +36,12 @@ Supports message sending, @mention with tab completion, reply by message ID, aut
    API_ID=your_api_id
    API_HASH=your_api_hash
    AUTO_DOWNLOAD_IMAGE=true
+   CHAT_HISTORY_LIMIT=30
    ```
 
    - Get your `API_ID` and `API_HASH` from [my.telegram.org](https://my.telegram.org/)
    - Set `AUTO_DOWNLOAD_IMAGE=false` to disable auto image download
+   - `CHAT_HISTORY_LIMIT` controls how many messages and chats are loaded (default is 50 if not set)
 
 3. **Run the program**
 
@@ -51,12 +56,6 @@ Supports message sending, @mention with tab completion, reply by message ID, aut
 - Use `/r [msg_id] message` to reply to a specific message (tab completion supported for msg_id)
 - Type `:wq` to return to the chat list
 - Images are auto-downloaded to the `downloads` folder (if enabled)
-
-## Dependencies
-
-- telethon
-- python-dotenv
-- prompt_toolkit
 
 ## License
 

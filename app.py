@@ -18,6 +18,7 @@ downloads = os.path.join(os.getcwd(), "downloads")
 os.makedirs(downloads, exist_ok=True)
 
 auto_download_image = os.getenv("AUTO_DOWNLOAD_IMAGE", "true").lower() == "true"
+chat_history_limit = int(os.getenv("CHAT_HISTORY_LIMIT", "30"))
 
 def get_display_name(sender):
     first = getattr(sender, 'first_name', None)
@@ -40,7 +41,7 @@ def get_photo_ext(photo):
             return ext
     return '.jpg'
 
-async def print_chatroom_messages(client, entity, limit):
+async def print_chatroom_messages(client, entity, limit=chat_history_limit):
     messages = await client.get_messages(entity, limit=limit)
     for msg in reversed(messages):
         sender = await msg.get_sender()
@@ -151,7 +152,7 @@ async def main():
             usernames = await get_usernames(client, selected.entity)
 
             # Retrieve all message IDs from the chatroom
-            messages = await client.get_messages(selected.entity, limit=50)
+            messages = await client.get_messages(selected.entity, limit=chat_history_limit)
             message_ids = [msg.id for msg in messages]
 
             session = PromptSession(completer=ChatCompleter(usernames, message_ids))
@@ -202,7 +203,7 @@ async def main():
 
             handler_ref = handler
 
-            await print_chatroom_messages(client, selected.entity, limit=100)
+            await print_chatroom_messages(client, selected.entity, limit=chat_history_limit)
 
             print(f"\nJoined chat: {selected.name or '(no title)'}")
             print("Type ':wq' to quit.")
