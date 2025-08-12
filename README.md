@@ -1,3 +1,5 @@
+<img width="752" height="456" alt="image" src="https://github.com/user-attachments/assets/1bd098a7-af7f-4420-916d-8d1299320ee4" />
+
 # Telegram Terminal Chat Client
 
 A terminal-based Telegram chat client built with [Telethon](https://github.com/LonamiWebs/Telethon).  
