@@ -79,9 +79,11 @@ async def print_chatroom_messages(client, entity, limit=chat_history_limit):
                 file_path = await client.download_media(msg.photo, file=image_path)
                 print(f"Downloaded image to: {file_path}")
             # Convert to ASCII Art and display
-            if os.path.exists(image_path):
+            if os.path.exists(image_path) and auto_download_image:
                 ascii_art = image_to_ascii(image_path)
                 print(f"[{msg.id}] {sender_str}: {reply_info}\n{ascii_art}\n{msg.text}")
+            elif not auto_download_image:
+                print(f"[{msg.id}] {sender_str}: {reply_info}[image] {msg.text}")
             else:
                 print(f"[{msg.id}] {sender_str}: {reply_info}[image] (image not found)")
         elif msg.media:
@@ -214,10 +216,12 @@ async def main():
                     if auto_download_image and not os.path.exists(image_path):
                         file_path = await client.download_media(event.photo, file=image_path)
                         print(f"Downloaded image to: {file_path}")
-                    # 產生 ASCII Art 並顯示
-                    if os.path.exists(image_path):
+                    # Generate and display ASCII Art
+                    if os.path.exists(image_path) and auto_download_image:
                         ascii_art = image_to_ascii(image_path)
                         print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[image]\n{ascii_art}\n{event.text}")
+                    elif not auto_download_image:
+                        print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[image] {event.text}")
                     else:
                         print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[image] (image not found)")
                 elif event.media:

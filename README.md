@@ -64,7 +64,8 @@ Supports message sending, @mention with tab completion, reply by message ID, aut
 - Use `/r [msg_id] message` to reply to a specific message (tab completion supported for msg_id)
 - Type `:wq` to return to the chat list
 - Images are auto-downloaded to the `downloads` folder (if enabled)
-- Images and stickers are displayed as ASCII art in the terminal (color or grayscale based on `.env` setting)
+- **Images and stickers are displayed as ASCII art in the terminal (color or grayscale based on `.env` setting).**
+- **Note:** Images must be downloaded first (i.e., `AUTO_DOWNLOAD_IMAGE=true`) for ASCII art display to work. If `AUTO_DOWNLOAD_IMAGE=false`, images will not be downloaded and ASCII art will not be shown.
 
 ## License
 
