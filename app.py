@@ -6,6 +6,8 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.completion import Completer, Completion
 import mimetypes
+from PIL import Image
+from telethon.tl.types import User, Chat, Channel
 
 
 load_dotenv()
@@ -19,6 +21,7 @@ os.makedirs(downloads, exist_ok=True)
 
 auto_download_image = os.getenv("AUTO_DOWNLOAD_IMAGE", "true").lower() == "true"
 chat_history_limit = int(os.getenv("CHAT_HISTORY_LIMIT", "30"))
+ascii_color = os.getenv("ASCII_COLOR", "true").lower() == "true"
 
 def get_display_name(sender):
     first = getattr(sender, 'first_name', None)
@@ -70,12 +73,17 @@ async def print_chatroom_messages(client, entity, limit=chat_history_limit):
         if msg.sticker:
             print(f"[{msg.id}] {sender_str}: {reply_info}[sticker]")
         elif msg.photo:
-            print(f"[{msg.id}] {sender_str}: {reply_info}[image] {msg.text}")
             ext = get_photo_ext(msg.photo)
             image_path = f"{downloads}/{msg.photo.id}{ext}"
             if auto_download_image and not os.path.exists(image_path):
                 file_path = await client.download_media(msg.photo, file=image_path)
                 print(f"Downloaded image to: {file_path}")
+            # Convert to ASCII Art and display
+            if os.path.exists(image_path):
+                ascii_art = image_to_ascii(image_path)
+                print(f"[{msg.id}] {sender_str}: {reply_info}\n{ascii_art}\n{msg.text}")
+            else:
+                print(f"[{msg.id}] {sender_str}: {reply_info}[image] (image not found)")
         elif msg.media:
             print(f"[{msg.id}] {sender_str}: {reply_info}[media] {msg.text}")
         else:
@@ -130,9 +138,20 @@ async def main():
 
         while True:
             # List chatrooms (dialogs)
-            dialogs = await client.get_dialogs(limit=20)
+            dialogs = await client.get_dialogs(limit=10)
+            # 過濾私人聊天與群組
+            filtered_dialogs = []
+            for dialog in dialogs:
+                entity = dialog.entity
+                if isinstance(entity, User) and not entity.bot:
+                    filtered_dialogs.append(dialog)
+                elif isinstance(entity, Chat):
+                    filtered_dialogs.append(dialog)
+                elif isinstance(entity, Channel) and getattr(entity, "megagroup", False):
+                    filtered_dialogs.append(dialog)
+
             print("\nYour recent chats:")
-            for idx, dialog in enumerate(dialogs):
+            for idx, dialog in enumerate(filtered_dialogs):
                 name = dialog.name or "(no title)"
                 print(f"{idx+1}. {name}")
 
@@ -140,8 +159,8 @@ async def main():
             while True:
                 try:
                     choice = int(input("\nEnter chat number to join: ")) - 1
-                    if 0 <= choice < len(dialogs):
-                        selected = dialogs[choice]
+                    if 0 <= choice < len(filtered_dialogs):
+                        selected = filtered_dialogs[choice]
                         break
                     else:
                         print("Invalid number.")
@@ -190,12 +209,17 @@ async def main():
                 if event.sticker:
                     print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[sticker]")
                 elif event.photo:
-                    print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[image] {event.text}")
                     ext = get_photo_ext(event.photo)
                     image_path = f"{downloads}/{event.photo.id}{ext}"
                     if auto_download_image and not os.path.exists(image_path):
                         file_path = await client.download_media(event.photo, file=image_path)
                         print(f"Downloaded image to: {file_path}")
+                    # 產生 ASCII Art 並顯示
+                    if os.path.exists(image_path):
+                        ascii_art = image_to_ascii(image_path)
+                        print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[image]\n{ascii_art}\n{event.text}")
+                    else:
+                        print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[image] (image not found)")
                 elif event.media:
                     print_formatted_text(f"[{event.id}] {sender_str}: {reply_info}[media] {event.text}")
                 else:
@@ -258,6 +282,34 @@ async def main():
             except KeyboardInterrupt:
                 print("\nbyebye!")
                 return
+
+def image_to_ascii(image_path, width=30):
+    chars = "@%#*+=-:. "
+    try:
+        img = Image.open(image_path)
+        w, h = img.size
+        aspect_ratio = h / w
+        char_aspect = 0.5
+        new_height = int(aspect_ratio * width * char_aspect)
+        img = img.resize((width, new_height))
+        img = img.convert('RGB')
+        pixels = list(img.getdata())
+        ascii_str = ""
+        for i in range(len(pixels)):
+            if i % width == 0 and i != 0:
+                ascii_str += "\n"
+            r, g, b = pixels[i]
+            gray = int(0.299*r + 0.587*g + 0.114*b)
+            char = chars[gray * len(chars) // 256]
+            if ascii_color:
+                # coloured
+                ascii_str += f"\033[38;2;{r};{g};{b}m{char}\033[0m"
+            else:
+                # gray
+                ascii_str += char
+        return ascii_str
+    except Exception as e:
+        return f"[Failed to convert image to ASCII: {e}]"
 
 if __name__ == '__main__':
     try:

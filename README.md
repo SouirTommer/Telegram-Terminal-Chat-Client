@@ -1,7 +1,7 @@
 # Telegram Terminal Chat Client
 
 A terminal-based Telegram chat client built with [Telethon](https://github.com/LonamiWebs/Telethon).  
-Supports message sending, @mention with tab completion, reply by message ID, auto image download, and more.
+Supports message sending, @mention with tab completion, reply by message ID, auto image download, ASCII art image display, and more.
 
 ## Features
 
@@ -9,7 +9,7 @@ Supports message sending, @mention with tab completion, reply by message ID, aut
 - @username mention with tab completion
 - `/r [msg_id] [message]` to reply to a specific message (msg_id supports tab completion)
 - Auto-download images (configurable via `.env`)
-- Display stickers, images, and media messages
+- Display stickers, images (as ASCII art), and media messages
 - Show reply target for each message
 - `.env` configuration support
 
@@ -19,6 +19,7 @@ Supports message sending, @mention with tab completion, reply by message ID, aut
 - telethon
 - python-dotenv
 - prompt_toolkit
+- pillow
 
 ## Installation
 
@@ -37,11 +38,13 @@ Supports message sending, @mention with tab completion, reply by message ID, aut
    API_HASH=your_api_hash
    AUTO_DOWNLOAD_IMAGE=true
    CHAT_HISTORY_LIMIT=30
+   ASCII_COLOR=true
    ```
 
    - Get your `API_ID` and `API_HASH` from [my.telegram.org](https://my.telegram.org/)
    - Set `AUTO_DOWNLOAD_IMAGE=false` to disable auto image download
    - `CHAT_HISTORY_LIMIT` controls how many messages and chats are loaded (default is 50 if not set)
+   - `ASCII_COLOR` controls whether images are displayed as colored ASCII art (`true`) or grayscale (`false`)
 
 3. **Run the program**
 
@@ -56,6 +59,7 @@ Supports message sending, @mention with tab completion, reply by message ID, aut
 - Use `/r [msg_id] message` to reply to a specific message (tab completion supported for msg_id)
 - Type `:wq` to return to the chat list
 - Images are auto-downloaded to the `downloads` folder (if enabled)
+- Images and stickers are displayed as ASCII art in the terminal (color or grayscale based on `.env` setting)
 
 ## License
 
