@@ -231,8 +231,7 @@ async def handle_special_commands(client, selected, msg, me, session):
         at_message = parts[1]
         async for user in client.iter_participants(selected.entity):
             if user.username == at_username:
-                await client.send_message(selected.entity, f"@{at_username} {at_message}", at_to=None)
-                session.app.renderer.clear()
+                await client.send_message(selected.entity, f"@{at_username} {at_message}")
                 break
         else:
             print(f"User @{at_username} not found in this chat.")
