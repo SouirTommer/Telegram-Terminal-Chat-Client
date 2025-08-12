@@ -1,4 +1,6 @@
 <img width="752" height="456" alt="image" src="https://github.com/user-attachments/assets/1bd098a7-af7f-4420-916d-8d1299320ee4" />
+<img width="433" height="305" alt="image" src="https://github.com/user-attachments/assets/3650dc91-b93f-4602-b51f-4e7990734fcc" />
+
 
 # Telegram Terminal Chat Client
 
