@@ -1,0 +1,12 @@
+name: Telegram-Terminal-Chat-Client
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - telethon
+  - Pillow
+  - python-dotenv
+  - prompt_toolkit
+  - pip
+  - pip:
+      - colorama
