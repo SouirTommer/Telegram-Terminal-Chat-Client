@@ -2,3 +2,4 @@ telethon
 python-dotenv
 prompt_toolkit
 pillow
+colorama

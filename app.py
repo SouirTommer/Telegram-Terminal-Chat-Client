@@ -8,6 +8,8 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.completion import Completer, Completion
 from PIL import Image
+import colorama
+colorama.init()
 
 # --- Config & Constants ---
 load_dotenv()
@@ -148,7 +150,7 @@ async def main():
         handler_ref = None
 
         while True:
-            dialogs = await client.get_dialogs(limit=10)
+            dialogs = await client.get_dialogs(limit=30)
             filtered_dialogs = [
                 d for d in dialogs
                 if (isinstance(d.entity, User) and not d.entity.bot)
