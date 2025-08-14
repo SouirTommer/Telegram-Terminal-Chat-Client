@@ -9,7 +9,7 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.completion import Completer, Completion
 from PIL import Image
 import colorama
-colorama.init()
+colorama.init(autoreset=True)
 
 # --- Config & Constants ---
 load_dotenv()
@@ -35,11 +35,13 @@ def get_photo_ext(photo):
     ext = mimetypes.guess_extension(mime) if mime else None
     return ext or '.jpg'
 
-def image_to_ascii(image_path, width=30):
+def image_to_ascii(image_path, width=40):
     chars = "@%#*+=-:. "
     try:
         img = Image.open(image_path)
         w, h = img.size
+        if w < width:
+            width = w
         aspect_ratio = h / w
         char_aspect = 0.5
         new_height = int(aspect_ratio * width * char_aspect)
