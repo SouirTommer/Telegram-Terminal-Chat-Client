@@ -44,13 +44,19 @@ Supports message sending, @mention with tab completion, reply by message ID, aut
    API_HASH=your_api_hash
    AUTO_DOWNLOAD_IMAGE=true
    CHAT_HISTORY_LIMIT=30
+   ENABLE_IMAGE_TO_ASCII=true
    ASCII_COLOR=true
+   DOWNLOADS_DIR=downloads
+   # DOWNLOADS_DIR another example：
+   # DOWNLOADS_DIR=C:\\Users\\yourname\\Downloads\\TelegramImages
    ```
 
    - Get your `API_ID` and `API_HASH` from [my.telegram.org](https://my.telegram.org/)
    - Set `AUTO_DOWNLOAD_IMAGE=false` to disable auto image download
-   - `CHAT_HISTORY_LIMIT` controls how many messages and chats are loaded (default is 50 if not set)
+   - `CHAT_HISTORY_LIMIT` controls how many messages and chats are loaded (default is 30 if not set)
+   - `ENABLE_IMAGE_TO_ASCII` Controls whether or not ASCII art is displayed.（`true`/`false`）
    - `ASCII_COLOR` controls whether images are displayed as colored ASCII art (`true`) or grayscale (`false`)
+   - `DOWNLOADS_DIR` Customisable download directory, supports relative and absolute paths.
 
 3. **Run the program**
 

@@ -16,11 +16,12 @@ load_dotenv()
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 SESSION_NAME = 'terminal_session'
-DOWNLOADS_DIR = os.path.join(os.getcwd(), "downloads")
+DOWNLOADS_DIR = os.getenv("DOWNLOADS_DIR", os.path.join(os.getcwd(), "downloads"))
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 AUTO_DOWNLOAD_IMAGE = os.getenv("AUTO_DOWNLOAD_IMAGE", "true").lower() == "true"
 CHAT_HISTORY_LIMIT = int(os.getenv("CHAT_HISTORY_LIMIT", "30"))
 ASCII_COLOR = os.getenv("ASCII_COLOR", "true").lower() == "true"
+ENABLE_IMAGE_TO_ASCII = os.getenv("ENABLE_IMAGE_TO_ASCII", "true").lower() == "true"
 
 # --- Utility Functions ---
 def get_display_name(sender):
@@ -35,7 +36,7 @@ def get_photo_ext(photo):
     ext = mimetypes.guess_extension(mime) if mime else None
     return ext or '.jpg'
 
-def image_to_ascii(image_path, width=40):
+def image_to_ascii(image_path, width=30):
     chars = "@%#*+=-:. "
     try:
         img = Image.open(image_path)
@@ -91,13 +92,16 @@ async def print_message(client, entity, msg):
         if AUTO_DOWNLOAD_IMAGE and not os.path.exists(image_path):
             file_path = await client.download_media(msg.photo, file=image_path)
             print(f"Downloaded image to: {file_path}")
-        if os.path.exists(image_path) and AUTO_DOWNLOAD_IMAGE:
-            ascii_art = image_to_ascii(image_path)
-            print(f"[{msg.id}] {sender_str}: {reply_info}\n{ascii_art}\n{msg.text}")
-        elif not AUTO_DOWNLOAD_IMAGE:
-            print(f"[{msg.id}] {sender_str}: {reply_info}[image] {msg.text}")
-        else:
-            print(f"[{msg.id}] {sender_str}: {reply_info}[image] (image not found)")
+            if os.path.exists(image_path) and AUTO_DOWNLOAD_IMAGE:
+                if ENABLE_IMAGE_TO_ASCII:
+                    ascii_art = image_to_ascii(image_path)
+                    print(f"[{msg.id}] {sender_str}: {reply_info}\n{ascii_art}\n{msg.text}")
+                else:
+                    print(f"[{msg.id}] {sender_str}: {reply_info}[image] {msg.text}")
+            elif not AUTO_DOWNLOAD_IMAGE:
+                print(f"[{msg.id}] {sender_str}: {reply_info}[image] {msg.text}")
+            else:
+                print(f"[{msg.id}] {sender_str}: {reply_info}[image] (image not found)")
     elif msg.media:
         print(f"[{msg.id}] {sender_str}: {reply_info}[media] {msg.text}")
     else:
